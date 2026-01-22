@@ -1,26 +1,18 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { LogBody, LogEventType, SetRefreshTokenDto, UserDto, UserSignUpBody } from '@bato-urbanflow/urbanflow-models';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as argon2 from 'argon2';
 import { Repository } from 'typeorm';
-import { LogBody } from '../objects/body/log.body';
 import { UserEntity } from '../objects/entities/user.entity';
-import { RMQEventType } from '../objects/enums/rmq-event.enum';
 import { LogsService } from './log.service';
-import { UserDto } from '../objects/body/user.dto';
-import { UserBody } from '../objects/body/user.body';
-import { SetRefreshTokenDto } from '../objects/body/set-refresh-token.dto';
 
 @Injectable()
 export class UserService {
   
     constructor(
         private logsService: LogsService,
-        @InjectRepository(UserEntity) private repository: Repository<UserEntity>,
-        @Inject('LOGS_SERVICE') private readonly client: ClientProxy,
-    ) {
-        this.logsService = new LogsService(client)
-    }
+        @InjectRepository(UserEntity) private repository: Repository<UserEntity>
+    ) { }
 
     async findOneByEmail(email: string): Promise<UserDto | null> {
         const user = await this.repository.findOneBy({ email });
@@ -36,7 +28,7 @@ export class UserService {
         } else { return null }
     }
 
-    async create(body: UserBody): Promise<UserDto> {
+    async create(body: UserSignUpBody): Promise<UserDto> {
         const existing = await this.repository.findOne({ where: { email: body.email } });
 
         if (existing) {
@@ -73,15 +65,15 @@ export class UserService {
         const existing = await this.repository.findOne({ where: { id: id } });
         if (existing) {
             await this.repository.delete(id)
-            const logUserDeleted = new LogBody("200", `User ${existing.email} deleted`)
-            this.logsService.sendEvent(RMQEventType.LOGS_CREATE, logUserDeleted)
+            const logUserDeleted = new LogBody("UrbanFlow-Auth", "200", `User ${existing.email} deleted`)
+            this.logsService.sendEvent(LogEventType.LOGS_CREATE, logUserDeleted)
             return {
                 statusCode: 200,
                 message: 'User deleted successfully',
             };
         } else {
-            const logUserNotFound = new LogBody("404", `User not found by id`)
-            this.logsService.sendEvent(RMQEventType.LOGS_CREATE, logUserNotFound)
+            const logUserNotFound = new LogBody("UrbanFlow-Auth", "404", `User not found by id`)
+            this.logsService.sendEvent(LogEventType.LOGS_CREATE, logUserNotFound)
             throw new NotFoundException('User not found');
         }
     }

@@ -1,7 +1,6 @@
+import { UserDto, UserRoleType } from '@bato-urbanflow/urbanflow-models';
 import { Exclude } from 'class-transformer';
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
-import { UserRoleType } from '../enums/user-role.enum';
-import { UserDto } from '../body/user.dto';
 
 @Entity()
 export class UserEntity {
@@ -38,8 +37,7 @@ export class UserEntity {
             lastName: this.lastName,
             email: this.email,
             role: this.role,
-            refreshToken: this.refreshToken,
-            createdAt: this.createdAt
+            refreshToken: this.refreshToken
         });
     }
 
