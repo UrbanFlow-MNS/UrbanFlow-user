@@ -1,9 +1,7 @@
+import { AuthEventType, SetRefreshTokenDto, UserSignUpBody } from '@bato-urbanflow/urbanflow-models';
 import { Controller, Delete, Param, ParseIntPipe } from "@nestjs/common";
 import { MessagePattern, Payload } from "@nestjs/microservices";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { SetRefreshTokenDto } from "../objects/body/set-refresh-token.dto";
-import { UserBody } from "../objects/body/user.body";
-import { AuthEventType } from "../objects/enums/auth-event.enum";
 import { UserService } from "../services/user.service";
 import { RpcValidationPipe } from "../utils/rpc-validation-pipe";
 
@@ -38,7 +36,7 @@ export class UserController {
     }
 
     @MessagePattern({ cmd: AuthEventType.NEED_USER_CREATION })
-    createUserFromEvent(@Payload(new RpcValidationPipe()) data: UserBody) {
+    createUserFromEvent(@Payload(new RpcValidationPipe()) data: UserSignUpBody) {
         return this.userService.create(data);
     }
 
