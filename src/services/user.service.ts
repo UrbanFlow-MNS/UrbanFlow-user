@@ -1,17 +1,18 @@
-import { LogBody, LogEventType, SetRefreshTokenDto, UserDto, UserSignUpBody } from '@bato-urbanflow/urbanflow-models';
+import { SetRefreshTokenDto, UserDto, UserSignUpBody } from '@bato-urbanflow/urbanflow-models';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as argon2 from 'argon2';
 import { Repository } from 'typeorm';
+import { IUserService } from '../interfaces/IUserService';
 import { UserEntity } from '../objects/entities/user.entity';
 import { LogsService } from './log.service';
 
 @Injectable()
-export class UserService {
+export class UserService implements IUserService {
   
     constructor(
-        private logsService: LogsService,
-        @InjectRepository(UserEntity) private repository: Repository<UserEntity>
+        private readonly logsService: LogsService,
+        @InjectRepository(UserEntity) private readonly repository: Repository<UserEntity>
     ) { }
 
     async findOneByEmail(email: string): Promise<UserDto | null> {
@@ -42,7 +43,7 @@ export class UserService {
             password: hashedPassword,
         });
 
-        try{
+        try {
             const userSaved = await this.repository.save(userCreated);
             return userSaved.toDto()
         } catch (error) {
@@ -57,6 +58,7 @@ export class UserService {
             user.refreshToken = body.refreshToken
             return user
         } else {
+            this.logsService.sendUserNotFound()
             throw new NotFoundException('User not found')
         }
     }
@@ -65,15 +67,10 @@ export class UserService {
         const existing = await this.repository.findOne({ where: { id: id } });
         if (existing) {
             await this.repository.delete(id)
-            const logUserDeleted = new LogBody("UrbanFlow-Auth", "200", `User ${existing.email} deleted`)
-            this.logsService.sendEvent(LogEventType.LOGS_CREATE, logUserDeleted)
-            return {
-                statusCode: 200,
-                message: 'User deleted successfully',
-            };
+            this.logsService.sendDeleteUser(existing.email)
+            return { statusCode: 200, message: 'User deleted successfully' }
         } else {
-            const logUserNotFound = new LogBody("UrbanFlow-Auth", "404", `User not found by id`)
-            this.logsService.sendEvent(LogEventType.LOGS_CREATE, logUserNotFound)
+            this.logsService.sendUserNotFound()
             throw new NotFoundException('User not found');
         }
     }
