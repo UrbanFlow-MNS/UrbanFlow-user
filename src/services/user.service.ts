@@ -9,7 +9,7 @@ import { LogsService } from './log.service';
 
 @Injectable()
 export class UserService implements IUserService {
-  
+
     constructor(
         private readonly logsService: LogsService,
         @InjectRepository(UserEntity) private readonly repository: Repository<UserEntity>
@@ -24,9 +24,21 @@ export class UserService implements IUserService {
 
     async findOneById(id: number): Promise<UserDto | null> {
         const user = await this.repository.findOneBy({ id });
-         if (user) {
+        if (user) {
             return user.toDto()
         } else { return null }
+    }
+
+    async checkUserCredentials(email: string, password: string): Promise<boolean> {
+        const user = await this.repository.findOne({
+            where: { email },
+            select: ['id', 'password']
+        });
+
+        if (!user) { return false; }
+
+        const isPasswordMatching = await argon2.verify(user.password, password);
+        return isPasswordMatching;
     }
 
     async create(body: UserSignUpBody): Promise<UserDto> {
@@ -61,6 +73,19 @@ export class UserService implements IUserService {
             this.logsService.sendUserNotFound()
             throw new NotFoundException('User not found')
         }
+    }
+
+    async updatePassword(id: number, newPassword: string) {
+        const user = await this.repository.findOneBy({ id });
+
+        if (!user) {
+            this.logsService.sendUserNotFound();
+            throw new NotFoundException('User not found');
+        }
+
+        const hashedPassword = await argon2.hash(newPassword);
+
+        await this.repository.update(user.id, { password: hashedPassword });
     }
 
     async delete(id: number) {
