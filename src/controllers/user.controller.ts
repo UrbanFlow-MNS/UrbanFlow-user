@@ -1,5 +1,5 @@
 import { AuthEventType, SetRefreshTokenDto, UserSignUpBody } from '@bato-urbanflow/urbanflow-models';
-import { Controller, Delete, Param, ParseIntPipe } from "@nestjs/common";
+import { Body, Controller, Delete, Param, ParseIntPipe, Put } from "@nestjs/common";
 import { MessagePattern, Payload } from "@nestjs/microservices";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { UserService } from "../services/user.service";
@@ -9,6 +9,20 @@ import { RpcValidationPipe } from "../utils/rpc-validation-pipe";
 @Controller('user')
 export class UserController {
     constructor(private readonly userService: UserService) { }
+
+    @ApiOperation({
+        summary: 'Change user password',
+        description: 'Updates the password of a user identified by its unique ID'
+    })
+    @ApiResponse({ status: 200, description: 'Password successfully updated' })
+    @ApiResponse({ status: 404, description: 'User not found' })
+    @Put(':id/password')
+    async updatePassword(
+        @Param('id', ParseIntPipe) id: number,
+        @Body('newPassword') newPassword: string
+    ) {
+        return this.userService.updatePassword(id, newPassword);
+    }
 
     @ApiOperation({
         summary: 'Delete a user',
@@ -45,6 +59,20 @@ export class UserController {
         @Payload(new RpcValidationPipe()) data: SetRefreshTokenDto,
     ) {
         return this.userService.setRefreshToken(data);
+    }
+
+    @MessagePattern({ cmd: 'auth.checkUserCredentials' })
+    checkUserCredentialsFromEvent(
+        @Payload(new RpcValidationPipe()) data: { email, password },
+    ) {
+        return this.userService.checkUserCredentials(data.email, data.password);
+    }
+
+    @MessagePattern({ cmd: 'user.updatePassword' })
+    updatePasswordFromEvent(
+        @Payload(new RpcValidationPipe()) data: { id: number, body }
+    ) {
+        return this.userService.updatePassword(data.id, data.body.newPassword)
     }
 
 }
