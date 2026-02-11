@@ -1,10 +1,10 @@
 import { SetRefreshTokenDto, UserDto, UserSignUpBody } from '@bato-urbanflow/urbanflow-models';
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { Repository } from 'typeorm';
+import { UserConstants } from '../core/constants';
+import { UserEntity } from '../database/entities/user.entity';
 import { IUserService } from '../interfaces/IUserService';
-import { UserEntity } from '../objects/entities/user.entity';
 import { LogsService } from './log.service';
 
 @Injectable()
@@ -12,7 +12,7 @@ export class UserService implements IUserService {
 
     constructor(
         private readonly logsService: LogsService,
-        @InjectRepository(UserEntity) private readonly repository: Repository<UserEntity>
+        @Inject(UserConstants.USER_REPOSITORY) private readonly repository: Repository<UserEntity>
     ) { }
 
     async findOneByEmail(email: string): Promise<UserDto | null> {
