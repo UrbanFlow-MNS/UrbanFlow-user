@@ -1,0 +1,5 @@
+export enum UserConstants {
+    DATA_SOURCE = "DATA_SOURCE",
+    USER_REPOSITORY = "USER_REPOSITORY",
+    IUSER_SERVICE = "IUSER_SERVICE"
+}
