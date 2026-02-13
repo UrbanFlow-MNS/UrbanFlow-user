@@ -6,11 +6,13 @@ import { DatabaseModule } from './database/database.module';
 import { userProviders } from './providers/user.providers';
 import { LogsService } from './services/log.service';
 import { UserService } from './services/user.service';
+import {AuthEventsController} from "./controllers/auth-events.controller";
+import {UserConstants} from "./core/constants";
 
 @Module({
     imports: [
-        ConfigModule.forRoot({ isGlobal: true }),
         DatabaseModule,
+        ConfigModule.forRoot({ isGlobal: true }),
         ClientsModule.register([
             {
                 name: 'LOGS_SERVICE',
@@ -23,10 +25,15 @@ import { UserService } from './services/user.service';
             },
         ])
     ],
-    controllers: [UserController],
+    controllers: [
+        UserController,
+        AuthEventsController
+    ],
     providers: [
         ...userProviders,
-        UserService, LogsService
+        UserService,
+        LogsService,
+        { provide: UserConstants.IUSER_SERVICE, useClass: UserService },
     ],
 })
 

@@ -4,7 +4,7 @@ import * as argon2 from 'argon2';
 import { Repository } from 'typeorm';
 import { UserConstants } from '../core/constants';
 import { UserEntity } from '../database/entities/user.entity';
-import { IUserService } from '../interfaces/IUserService';
+import {IUserService} from '../interfaces/user-service.interface';
 import { LogsService } from './log.service';
 
 @Injectable()
