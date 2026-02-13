@@ -1,9 +1,9 @@
 import { DataSource } from 'typeorm';
-import { AppConstants } from '../core/constants';
+import {UserConstants} from '../core/constants';
 
 export const databaseProviders = [
     {
-        provide: AppConstants.DATA_SOURCE,
+        provide: UserConstants.DATA_SOURCE,
         useFactory: async () => {
             const dataSource = new DataSource({
                 type: 'postgres',

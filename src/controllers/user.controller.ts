@@ -1,14 +1,16 @@
-import { AuthEventType, SetRefreshTokenDto, UserSignUpBody } from '@bato-urbanflow/urbanflow-models';
-import { Body, Controller, Delete, Param, ParseIntPipe, Put } from "@nestjs/common";
+import { AuthEventType } from '@bato-urbanflow/urbanflow-models';
+import {Body, Controller, Delete, Inject, Param, ParseIntPipe, Put} from "@nestjs/common";
 import { MessagePattern, Payload } from "@nestjs/microservices";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { UserService } from "../services/user.service";
 import { RpcValidationPipe } from "../utils/rpc-validation-pipe";
+import {IUserService} from "../interfaces/user-service.interface";
+import {UserConstants} from "../core/constants";
 
 @ApiTags('User')
 @Controller('user')
 export class UserController {
-    constructor(private readonly userService: UserService) { }
+
+    constructor(@Inject(UserConstants.IUSER_SERVICE) private readonly userService: IUserService) { }
 
     @ApiOperation({
         summary: 'Change user password',
@@ -17,7 +19,7 @@ export class UserController {
     @ApiResponse({ status: 200, description: 'Password successfully updated' })
     @ApiResponse({ status: 404, description: 'User not found' })
     @Put(':id/password')
-    async updatePassword(
+    updatePassword(
         @Param('id', ParseIntPipe) id: number,
         @Body('newPassword') newPassword: string
     ) {
@@ -40,39 +42,6 @@ export class UserController {
         @Payload(new RpcValidationPipe()) data: { id: number },
     ) {
         return this.userService.findOneById(data.id);
-    }
-
-    @MessagePattern({ cmd: AuthEventType.FIND_ONE_BY_EMAIL })
-    findOneUserByEmailFromEvent(
-        @Payload(new RpcValidationPipe()) data: { email: string },
-    ) {
-        return this.userService.findOneByEmail(data.email);
-    }
-
-    @MessagePattern({ cmd: AuthEventType.NEED_USER_CREATION })
-    createUserFromEvent(@Payload(new RpcValidationPipe()) data: UserSignUpBody) {
-        return this.userService.create(data);
-    }
-
-    @MessagePattern({ cmd: AuthEventType.SET_REFRESH_TOKEN })
-    setRefreshTokenFromEvent(
-        @Payload(new RpcValidationPipe()) data: SetRefreshTokenDto,
-    ) {
-        return this.userService.setRefreshToken(data);
-    }
-
-    @MessagePattern({ cmd: 'auth.checkUserCredentials' })
-    checkUserCredentialsFromEvent(
-        @Payload(new RpcValidationPipe()) data: { email, password },
-    ) {
-        return this.userService.checkUserCredentials(data.email, data.password);
-    }
-
-    @MessagePattern({ cmd: 'user.updatePassword' })
-    updatePasswordFromEvent(
-        @Payload(new RpcValidationPipe()) data: { id: number, body }
-    ) {
-        return this.userService.updatePassword(data.id, data.body.newPassword)
     }
 
 }

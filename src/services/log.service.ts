@@ -4,7 +4,7 @@ import { ClientProxy } from "@nestjs/microservices";
 
 export class LogsService {
 
-    constructor(  
+    constructor(
         @Inject('LOGS_SERVICE') private readonly client: ClientProxy
     ) { }
 
@@ -13,12 +13,12 @@ export class LogsService {
     }
 
     sendDeleteUser(email: string) {
-        const logUserDeleted = new LogBody("UrbanFlow-Auth", "200", `User ${email} deleted`)
+        const logUserDeleted = new LogBody("UrbanFlow-User", "200", `User ${email} deleted`)
         this.sendEvent(LogEventType.LOGS_CREATE, logUserDeleted)
     }
 
     sendUserNotFound() {
-        const logUserNotFound = new LogBody("UrbanFlow-Auth", "404", `User not found by id`)
+        const logUserNotFound = new LogBody("UrbanFlow-User", "404", `User not found by id`)
         this.sendEvent(LogEventType.LOGS_CREATE, logUserNotFound)
     }
 
