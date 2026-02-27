@@ -1,9 +1,11 @@
-import {Controller} from "@nestjs/common";
+import {Controller, UseFilters} from "@nestjs/common";
 import {MessagePattern, Payload} from "@nestjs/microservices";
+import {HttpToRpcExceptionFilter} from "../filters/http-to-rpc-exception.filter";
 import {RpcValidationPipe} from "../utils/rpc-validation-pipe";
 import {AuthEventType, SetRefreshTokenDto, UserSignUpBody} from "@bato-urbanflow/urbanflow-models";
 import {UserService} from "../services/user.service";
 
+@UseFilters(new HttpToRpcExceptionFilter())
 @Controller('user')
 export class AuthEventsController {
 
@@ -40,6 +42,13 @@ export class AuthEventsController {
         @Payload(new RpcValidationPipe()) data: { id: number, body }
     ) {
         return this.userService.updatePassword(data.id, data.body.newPassword)
+    }
+
+    @MessagePattern({ cmd: 'user.deleteUser' })
+    deleteUserFromEvent(
+        @Payload(new RpcValidationPipe()) data: { id: number }
+    ) {
+        return this.userService.delete(data.id)
     }
 
 }
