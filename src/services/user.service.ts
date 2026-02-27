@@ -86,6 +86,7 @@ export class UserService implements IUserService {
         const hashedPassword = await argon2.hash(newPassword);
 
         await this.repository.update(user.id, { password: hashedPassword });
+        return { message: 'Password updated successfully' };
     }
 
     async delete(id: number) {
