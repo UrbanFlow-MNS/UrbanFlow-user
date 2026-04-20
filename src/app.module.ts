@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { AdminUserCityController } from './controllers/admin-user-city.controller';
 import { AuthEventsController } from "./controllers/auth-events.controller";
 import { PrometheusController } from './controllers/prometheus.controller';
 import { UserController } from './controllers/user.controller';
 import { UserConstants } from "./core/constants";
 import { DatabaseModule } from './database/database.module';
 import { userProviders } from './providers/user.providers';
+import { AdminUserCityService } from './services/admin-user-city.service';
 import { LogsService } from './services/log.service';
 import { PrometheusService } from './services/prometheus.service';
 import { UserService } from './services/user.service';
@@ -30,11 +32,13 @@ import { UserService } from './services/user.service';
     controllers: [
         UserController,
         AuthEventsController,
+        AdminUserCityController,
         PrometheusController,
     ],
     providers: [
         ...userProviders,
         UserService,
+        AdminUserCityService,
         LogsService,
         { provide: UserConstants.IUSER_SERVICE, useClass: UserService },
         PrometheusService,
