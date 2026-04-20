@@ -15,8 +15,6 @@ export class AdminUserCityController {
 
     constructor(private readonly adminUserCityService: AdminUserCityService) { }
 
-    // HTTP endpoints (sans guard — protection assurée en amont par la gateway)
-
     @ApiOperation({ summary: 'Create a USER_CITY account' })
     @ApiResponse({ status: 201, description: 'USER_CITY account created' })
     @ApiResponse({ status: 400, description: 'Email already used' })
@@ -55,8 +53,6 @@ export class AdminUserCityController {
     delete(@Param('id', ParseIntPipe) id: number) {
         return this.adminUserCityService.delete(id, 0, UserRoleType.SUPERADMIN);
     }
-
-    // RPC patterns — le caller context (id + role) est transmis par la gateway
 
     @MessagePattern({ cmd: 'adminUserCity.create' })
     createFromEvent(
