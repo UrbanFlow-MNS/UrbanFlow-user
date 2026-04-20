@@ -27,6 +27,9 @@ export class UserEntity {
     @Column({ nullable: true })
     refreshToken?: string
 
+    @Column({ nullable: true })
+    createdBy?: number
+
     @CreateDateColumn()
     createdAt: Date
 
