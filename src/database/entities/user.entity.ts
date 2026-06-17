@@ -1,6 +1,7 @@
 import { UserDto, UserRoleType } from '@bato-urbanflow/urbanflow-models';
 import { Exclude } from 'class-transformer';
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { AgencyEntity } from './agency.entity';
 
 @Entity()
 export class UserEntity {
@@ -30,11 +31,17 @@ export class UserEntity {
     @Column({ nullable: true })
     createdBy?: number
 
+    @Column({ nullable: true })
+    agencyId?: number;
+
+    @ManyToOne(() => AgencyEntity, (agency) => agency.users, { nullable: true })
+    agency?: AgencyEntity;
+
     @CreateDateColumn()
     createdAt: Date
 
-    toDto(): UserDto {
-        return new UserDto({
+    toDto(): UserDto & { agencyId?: number } {
+        const dto = new UserDto({
             id: this.id,
             firstName: this.firstName,
             lastName: this.lastName,
@@ -42,6 +49,10 @@ export class UserEntity {
             role: this.role,
             refreshToken: this.refreshToken
         });
+        if (this.role === UserRoleType.ADMIN_USER_CITY) {
+            (dto as UserDto & { agencyId?: number }).agencyId = this.agencyId ?? null;
+        }
+        return dto as UserDto & { agencyId?: number };
     }
 
 }
