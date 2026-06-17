@@ -62,6 +62,7 @@ export class AgencyService {
         await this.userRepository.save(user);
 
         const updated = await this.agencyRepository.findOne({ where: { id: agencyId }, relations: ['users'] });
+        if (!updated) throw new NotFoundException('Agency not found');
         return this.toResponse(updated);
     }
 
@@ -76,10 +77,11 @@ export class AgencyService {
             throw new NotFoundException('User not found');
         }
 
-        user.agencyId = null;
+        user.agencyId = undefined;
         await this.userRepository.save(user);
 
         const updated = await this.agencyRepository.findOne({ where: { id: agencyId }, relations: ['users'] });
+        if (!updated) throw new NotFoundException('Agency not found');
         return this.toResponse(updated);
     }
 

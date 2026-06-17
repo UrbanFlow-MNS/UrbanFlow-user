@@ -50,7 +50,7 @@ export class UserEntity {
             refreshToken: this.refreshToken
         });
         if (this.role === UserRoleType.ADMIN_USER_CITY) {
-            (dto as UserDto & { agencyId?: number }).agencyId = this.agencyId ?? null;
+            (dto as UserDto & { agencyId?: number }).agencyId = this.agencyId ?? undefined;
         }
         return dto as UserDto & { agencyId?: number };
     }
