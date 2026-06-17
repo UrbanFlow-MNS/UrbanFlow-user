@@ -68,17 +68,12 @@ export class AgencyService {
 
     async removeUser(agencyId: number, userId: number) {
         const agency = await this.agencyRepository.findOne({ where: { id: agencyId }, relations: ['users'] });
-        if (!agency) {
-            throw new NotFoundException('Agency not found');
-        }
+        if (!agency) throw new NotFoundException('Agency not found');
 
         const user = await this.userRepository.findOne({ where: { id: userId } });
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
+        if (!user) throw new NotFoundException('User not found');
 
-        user.agencyId = undefined;
-        await this.userRepository.save(user);
+        await this.userRepository.update(userId, { agencyId: null as any });
 
         const updated = await this.agencyRepository.findOne({ where: { id: agencyId }, relations: ['users'] });
         if (!updated) throw new NotFoundException('Agency not found');
@@ -86,10 +81,18 @@ export class AgencyService {
     }
 
     async delete(id: number) {
-        const agency = await this.agencyRepository.findOne({ where: { id } });
-        if (!agency) {
-            throw new NotFoundException('Agency not found');
+        const agency = await this.agencyRepository.findOne({ where: { id }, relations: ['users'] });
+        if (!agency) throw new NotFoundException('Agency not found');
+
+        if (agency.users?.length) {
+            await this.userRepository
+                .createQueryBuilder()
+                .update()
+                .set({ agencyId: null as any })
+                .where('agencyId = :id', { id })
+                .execute();
         }
+
         await this.agencyRepository.delete(id);
         return { statusCode: 200, message: 'Agency deleted successfully' };
     }

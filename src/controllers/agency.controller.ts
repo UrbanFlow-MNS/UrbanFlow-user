@@ -11,7 +11,7 @@ export class AgencyController {
     constructor(private readonly agencyService: AgencyService) { }
 
     @MessagePattern({ cmd: 'agency.create' })
-    create(@Payload(new RpcValidationPipe()) data: { city: string; callerId: number }) {
+    create(@Payload() data: { city: string; callerId: number }) {
         return this.agencyService.create({ city: data.city }, data.callerId);
     }
 
