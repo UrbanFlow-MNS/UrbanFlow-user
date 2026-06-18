@@ -44,4 +44,12 @@ export class UserController {
         return this.userService.findOneById(data.id);
     }
 
+    @MessagePattern({ cmd: 'user.findOne' })
+    async findOneById(@Payload() data: { id: number }) {
+        const user = await this.userService.findOneById(data.id);
+        if (!user) return null;
+        const { refreshToken, ...info } = user;
+        return info;
+    }
+
 }

@@ -1,8 +1,10 @@
-import { SetRefreshTokenDto, UserDto, UserSignUpBody } from '@bato-urbanflow/urbanflow-models';
+import { SetRefreshTokenDto, UserDto, UserRoleType, UserSignUpBody } from '@bato-urbanflow/urbanflow-models';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import * as argon2 from 'argon2';
 import { Repository } from 'typeorm';
 import { UserConstants } from '../core/constants';
+import { AgencyEntity } from '../database/entities/agency.entity';
 import { UserEntity } from '../database/entities/user.entity';
 import {IUserService} from '../interfaces/user-service.interface';
 import { LogsService } from './log.service';
@@ -12,7 +14,8 @@ export class UserService implements IUserService {
 
     constructor(
         private readonly logsService: LogsService,
-        @Inject(UserConstants.USER_REPOSITORY) private readonly repository: Repository<UserEntity>
+        @Inject(UserConstants.USER_REPOSITORY) private readonly repository: Repository<UserEntity>,
+        @Inject('AGENCY_REPOSITORY') private readonly agencyRepository: Repository<AgencyEntity>,
     ) { }
 
     async findOneByEmail(email: string): Promise<UserDto | null> {
@@ -42,24 +45,30 @@ export class UserService implements IUserService {
     }
 
     async create(body: UserSignUpBody): Promise<UserDto> {
-        const existing = await this.repository.findOne({ where: { email: body.email } });
+        if (body.role === UserRoleType.ADMIN_USER_CITY && !body.agencyId) {
+            throw new RpcException({ statusCode: 400, message: 'agencyId is required for ADMIN_USER_CITY role' });
+        }
 
+        if (body.agencyId) {
+            const agency = await this.agencyRepository.findOneBy({ id: body.agencyId });
+            if (!agency) {
+                throw new RpcException({ statusCode: 404, message: 'Agency not found' });
+            }
+        }
+
+        const existing = await this.repository.findOne({ where: { email: body.email } });
         if (existing) {
-            throw new BadRequestException("Email already used");
+            throw new RpcException({ statusCode: 400, message: 'Invalid request' });
         }
 
         const hashedPassword = await argon2.hash(body.password);
-
-        const userCreated = this.repository.create({
-            ...body,
-            password: hashedPassword,
-        });
+        const userCreated = this.repository.create({ ...body, password: hashedPassword });
 
         try {
             const userSaved = await this.repository.save(userCreated);
-            return userSaved.toDto()
-        } catch (error) {
-            throw new BadRequestException(error);
+            return userSaved.toDto();
+        } catch (error: any) {
+            throw new RpcException({ statusCode: 400, message: error?.message ?? 'Failed to create user' });
         }
     }
 

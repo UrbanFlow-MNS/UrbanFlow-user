@@ -40,19 +40,16 @@ export class UserEntity {
     @CreateDateColumn()
     createdAt: Date
 
-    toDto(): UserDto & { agencyId?: number } {
-        const dto = new UserDto({
+    toDto(): UserDto {
+        return new UserDto({
             id: this.id,
             firstName: this.firstName,
             lastName: this.lastName,
             email: this.email,
             role: this.role,
-            refreshToken: this.refreshToken
+            refreshToken: this.refreshToken,
+            agencyId: this.role === UserRoleType.ADMIN_USER_CITY ? (this.agencyId ?? undefined) : undefined,
         });
-        if (this.role === UserRoleType.ADMIN_USER_CITY) {
-            (dto as UserDto & { agencyId?: number }).agencyId = this.agencyId ?? undefined;
-        }
-        return dto as UserDto & { agencyId?: number };
     }
 
 }
