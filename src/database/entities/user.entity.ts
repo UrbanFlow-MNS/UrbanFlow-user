@@ -25,7 +25,7 @@ export class UserEntity {
     @Exclude()
     password: string
 
-    @Column({ nullable: true })
+    @Column({ type: 'text', nullable: true })
     refreshToken?: string
 
     @Column({ nullable: true })
