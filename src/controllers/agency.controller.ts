@@ -1,42 +1,78 @@
 import { Controller, UseFilters } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { GrpcMethod } from '@nestjs/microservices';
 import { HttpToRpcExceptionFilter } from '../filters/http-to-rpc-exception.filter';
 import { AgencyService } from '../services/agency.service';
-import { RpcValidationPipe } from '../utils/rpc-validation-pipe';
+import {
+    AgencyByIdRequest,
+    AgencyDtoGrpc,
+    AgencyListResponse,
+    AgencyUserRequest,
+    CreateAgencyRequest,
+    EmptyResponse,
+    FindOneAgencyResponse,
+} from '../../../proto/generated/typescript/user';
+
+type AgencyResponse = {
+    id: number;
+    city: string;
+    createdBy: number;
+    createdAt: Date | string;
+    userIds: number[];
+};
 
 @UseFilters(new HttpToRpcExceptionFilter())
 @Controller()
-export class AgencyController {
+export class AgencyGrpcController {
 
     constructor(private readonly agencyService: AgencyService) { }
 
-    @MessagePattern({ cmd: 'agency.create' })
-    create(@Payload() data: { city: string; callerId: number }) {
-        return this.agencyService.create({ city: data.city }, data.callerId);
+    @GrpcMethod('AgencyService', 'Create')
+    async create(data: CreateAgencyRequest): Promise<AgencyDtoGrpc> {
+        const agency = await this.agencyService.create({ city: data.city }, data.callerId);
+        return this.toGrpc(agency);
     }
 
-    @MessagePattern({ cmd: 'agency.findAll' })
-    findAll() {
-        return this.agencyService.findAll();
+    @GrpcMethod('AgencyService', 'FindAll')
+    async findAll(): Promise<AgencyListResponse> {
+        const agencies = await this.agencyService.findAll();
+        return { agencies: agencies.map(a => this.toGrpc(a)) };
     }
 
-    @MessagePattern({ cmd: 'agency.findOne' })
-    findOne(@Payload() data: { id: number }) {
-        return this.agencyService.findOne(data.id);
+    @GrpcMethod('AgencyService', 'FindOne')
+    async findOne(data: AgencyByIdRequest): Promise<FindOneAgencyResponse> {
+        try {
+            const agency = await this.agencyService.findOne(data.id);
+            return { agency: this.toGrpc(agency) };
+        } catch {
+            return { agency: undefined };
+        }
     }
 
-    @MessagePattern({ cmd: 'agency.addUser' })
-    addUser(@Payload() data: { agencyId: number; userId: number }) {
-        return this.agencyService.addUser(data.agencyId, data.userId);
+    @GrpcMethod('AgencyService', 'AddUser')
+    async addUser(data: AgencyUserRequest): Promise<EmptyResponse> {
+        await this.agencyService.addUser(data.agencyId, data.userId);
+        return {};
     }
 
-    @MessagePattern({ cmd: 'agency.removeUser' })
-    removeUser(@Payload() data: { agencyId: number; userId: number }) {
-        return this.agencyService.removeUser(data.agencyId, data.userId);
+    @GrpcMethod('AgencyService', 'RemoveUser')
+    async removeUser(data: AgencyUserRequest): Promise<EmptyResponse> {
+        await this.agencyService.removeUser(data.agencyId, data.userId);
+        return {};
     }
 
-    @MessagePattern({ cmd: 'agency.delete' })
-    delete(@Payload() data: { id: number }) {
-        return this.agencyService.delete(data.id);
+    @GrpcMethod('AgencyService', 'Delete')
+    async delete(data: AgencyByIdRequest): Promise<EmptyResponse> {
+        await this.agencyService.delete(data.id);
+        return {};
+    }
+
+    private toGrpc(agency: AgencyResponse): AgencyDtoGrpc {
+        return {
+            id: agency.id,
+            city: agency.city,
+            createdBy: agency.createdBy,
+            createdAt: agency.createdAt instanceof Date ? agency.createdAt.toISOString() : (agency.createdAt ?? ''),
+            userIds: agency.userIds ?? [],
+        };
     }
 }

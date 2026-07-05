@@ -1,8 +1,7 @@
-import { AuthEventType, SetRefreshTokenDto, UserDto, UserRoleType } from '@bato-urbanflow/urbanflow-models';
+import { SetRefreshTokenDto, UserDto, UserRoleType } from '@bato-urbanflow/urbanflow-models';
 import { Body, Controller, Delete, Inject, Param, ParseIntPipe, Put } from "@nestjs/common";
-import { GrpcMethod, MessagePattern, Payload } from "@nestjs/microservices";
+import { GrpcMethod } from "@nestjs/microservices";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { RpcValidationPipe } from "../utils/rpc-validation-pipe";
 import { IUserService } from "../interfaces/user-service.interface";
 import { UserConstants } from "../core/constants";
 
@@ -10,11 +9,14 @@ import {
     CheckCredentialsRequest,
     CheckUserCredentialsResponse,
     CreateUserRequest,
+    DeleteUserRequest,
+    EmptyResponse,
     FindOneByEmailRequest,
     FindOneByEmailResponse,
     FindOneByIdRequest,
     FindOneByIdResponse,
     SetRefreshTokenRequest,
+    UpdatePasswordRequest,
     UserDtoGrpc,
     UserRoleType as GrpcUserRoleType,
 } from '../../../proto/generated/typescript/user';
@@ -48,21 +50,6 @@ export class UserController {
     @Delete(':id')
     async deleteUser(@Param('id', ParseIntPipe) id: number) {
         return this.userService.delete(id);
-    }
-
-    @MessagePattern({ cmd: AuthEventType.FIND_ONE_BY_ID })
-    findOneUserByIdFromEvent(
-        @Payload(new RpcValidationPipe()) data: { id: number },
-    ) {
-        return this.userService.findOneById(data.id);
-    }
-
-    @MessagePattern({ cmd: 'user.findOne' })
-    async findOneById(@Payload() data: { id: number }) {
-        const user = await this.userService.findOneById(data.id);
-        if (!user) return null;
-        const { refreshToken, ...info } = user;
-        return info;
     }
 
 }
@@ -104,6 +91,18 @@ export class UserGrpcController {
         const user = await this.userService.findOneByEmail(data.email);
         if (!user) return { user: undefined };
         return { user: this.toGrpc(user) };
+    }
+
+    @GrpcMethod('UserService', 'UpdatePassword')
+    async updatePassword(data: UpdatePasswordRequest): Promise<EmptyResponse> {
+        await this.userService.updatePassword(data.id, data.newPassword);
+        return {};
+    }
+
+    @GrpcMethod('UserService', 'DeleteUser')
+    async deleteUser(data: DeleteUserRequest): Promise<EmptyResponse> {
+        await this.userService.delete(data.id);
+        return {};
     }
 
     private toGrpc(user: UserDto): UserDtoGrpc {
