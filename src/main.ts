@@ -14,6 +14,7 @@ async function bootstrap() {
         package: 'user',
         protoPath: join(__dirname, '../../proto/files/user.proto'),
         url: `0.0.0.0:${process.env.GRPC_PORT ?? 7006}`,
+        loader: { enums: String },
       },
     })
 

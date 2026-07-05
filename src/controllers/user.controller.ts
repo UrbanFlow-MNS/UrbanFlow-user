@@ -60,7 +60,8 @@ export class UserGrpcController {
 
     @GrpcMethod('UserService', 'CreateUser')
     async createUser(data: CreateUserRequest): Promise<UserDtoGrpc> {
-        const user = await this.userService.create({ firstName: data.firstName, lastName: data.lastName, email: data.email, password: data.password, role: UserRoleType.USER_CITY });
+        const role = (data.role as unknown as UserRoleType) ?? UserRoleType.USER_CITY;
+        const user = await this.userService.create({ firstName: data.firstName, lastName: data.lastName, email: data.email, password: data.password, role });
         return this.toGrpc(user);
     }
 
