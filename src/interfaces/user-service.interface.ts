@@ -7,4 +7,5 @@ export interface IUserService {
     updatePassword(id: number, newPassword: string): void
     delete(id: number): Promise<{ statusCode: number; message: string }>;
     setRefreshToken(body: SetRefreshTokenDto): Promise<UserDto>;
+    checkUserCredentials(email: string, password: string): Promise<boolean>;
 }
