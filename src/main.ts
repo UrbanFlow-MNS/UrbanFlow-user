@@ -6,6 +6,11 @@ config({ path: __dirname + '/../../.env' });
 import { join } from 'path';
 
 async function bootstrap() {
+    const userInternalSecret = process.env.USER_INTERNAL_SECRET;
+    if (!userInternalSecret) {
+        throw new Error("USER_INTERNAL_SECRET is not defined.");
+    }
+
     const app = await NestFactory.create(AppModule);
 
     app.connectMicroservice<MicroserviceOptions>({

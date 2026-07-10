@@ -1,7 +1,8 @@
 import { SetRefreshTokenDto, UserDto, UserRoleType } from '@bato-urbanflow/urbanflow-models';
-import { Body, Controller, Delete, Inject, Param, ParseIntPipe, Put } from "@nestjs/common";
+import { Body, Controller, Delete, Inject, Param, ParseIntPipe, Put, UseGuards } from "@nestjs/common";
 import { GrpcMethod } from "@nestjs/microservices";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { GrpcAuthGuard } from "../guards/grpc-auth.guard";
 import { IUserService } from "../interfaces/user-service.interface";
 import { UserConstants } from "../core/constants";
 
@@ -54,6 +55,7 @@ export class UserController {
 
 }
 
+@UseGuards(GrpcAuthGuard)
 @Controller()
 export class UserGrpcController {
     constructor(@Inject(UserConstants.IUSER_SERVICE) private readonly userService: IUserService) { }
