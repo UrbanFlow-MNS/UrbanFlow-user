@@ -1,6 +1,7 @@
-import { Controller, UseFilters } from '@nestjs/common';
+import { Controller, UseFilters, UseGuards } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { HttpToRpcExceptionFilter } from '../filters/http-to-rpc-exception.filter';
+import { GrpcAuthGuard } from '../guards/grpc-auth.guard';
 import { AgencyService } from '../services/agency.service';
 import {
     AgencyByIdRequest,
@@ -20,6 +21,7 @@ type AgencyResponse = {
     userIds: number[];
 };
 
+@UseGuards(GrpcAuthGuard)
 @UseFilters(new HttpToRpcExceptionFilter())
 @Controller()
 export class AgencyGrpcController {

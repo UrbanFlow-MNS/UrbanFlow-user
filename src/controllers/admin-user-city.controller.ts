@@ -1,7 +1,8 @@
 import { UserDto, UserRoleType } from '@bato-urbanflow/urbanflow-models';
-import { Controller, UseFilters } from '@nestjs/common';
+import { Controller, UseFilters, UseGuards } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { HttpToRpcExceptionFilter } from '../filters/http-to-rpc-exception.filter';
+import { GrpcAuthGuard } from '../guards/grpc-auth.guard';
 import { AdminUserCityService } from '../services/admin-user-city.service';
 import {
     CreateCityUserRequest,
@@ -16,6 +17,7 @@ import {
     UserRoleType as GrpcUserRoleType,
 } from '../../../proto/generated/typescript/user';
 
+@UseGuards(GrpcAuthGuard)
 @UseFilters(new HttpToRpcExceptionFilter())
 @Controller()
 export class AdminUserCityGrpcController {

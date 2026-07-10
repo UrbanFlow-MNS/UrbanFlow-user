@@ -84,7 +84,15 @@ export class UserService implements IUserService {
         }
     }
 
-    async updatePassword(id: number, newPassword: string) {
+    async updatePassword(id: number, newPassword: string, callerId: number, callerRole: string) {
+        if (callerRole !== 'SUPERADMIN' && callerId !== id) {
+            throw new RpcException({ statusCode: 403, message: "Forbidden: cannot update another user's password" });
+        }
+
+        if (!newPassword || newPassword.length < 8) {
+            throw new RpcException({ statusCode: 400, message: 'Password must be at least 8 characters long' });
+        }
+
         const user = await this.repository.findOneBy({ id });
 
         if (!user) {

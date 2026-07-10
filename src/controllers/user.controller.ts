@@ -1,7 +1,7 @@
 import { SetRefreshTokenDto, UserDto, UserRoleType } from '@bato-urbanflow/urbanflow-models';
-import { Body, Controller, Delete, Inject, Param, ParseIntPipe, Put } from "@nestjs/common";
+import { Controller, Inject, UseGuards } from "@nestjs/common";
 import { GrpcMethod } from "@nestjs/microservices";
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { GrpcAuthGuard } from "../guards/grpc-auth.guard";
 import { IUserService } from "../interfaces/user-service.interface";
 import { UserConstants } from "../core/constants";
 
@@ -21,39 +21,7 @@ import {
     UserRoleType as GrpcUserRoleType,
 } from '../../../proto/generated/typescript/user';
 
-@ApiTags('User')
-@Controller('user')
-export class UserController {
-
-    constructor(@Inject(UserConstants.IUSER_SERVICE) private readonly userService: IUserService) { }
-
-    @ApiOperation({
-        summary: 'Change user password',
-        description: 'Updates the password of a user identified by its unique ID'
-    })
-    @ApiResponse({ status: 200, description: 'Password successfully updated' })
-    @ApiResponse({ status: 404, description: 'User not found' })
-    @Put(':id/password')
-    updatePassword(
-        @Param('id', ParseIntPipe) id: number,
-        @Body('newPassword') newPassword: string
-    ) {
-        return this.userService.updatePassword(id, newPassword);
-    }
-
-    @ApiOperation({
-        summary: 'Delete a user',
-        description: 'Deletes a user account identified by its unique ID'
-    })
-    @ApiResponse({ status: 200, description: 'User successfully deleted' })
-    @ApiResponse({ status: 404, description: 'User not found' })
-    @Delete(':id')
-    async deleteUser(@Param('id', ParseIntPipe) id: number) {
-        return this.userService.delete(id);
-    }
-
-}
-
+@UseGuards(GrpcAuthGuard)
 @Controller()
 export class UserGrpcController {
     constructor(@Inject(UserConstants.IUSER_SERVICE) private readonly userService: IUserService) { }
@@ -96,7 +64,7 @@ export class UserGrpcController {
 
     @GrpcMethod('UserService', 'UpdatePassword')
     async updatePassword(data: UpdatePasswordRequest): Promise<EmptyResponse> {
-        await this.userService.updatePassword(data.id, data.newPassword);
+        await this.userService.updatePassword(data.id, data.newPassword, data.callerId, data.callerRole as unknown as string);
         return {};
     }
 

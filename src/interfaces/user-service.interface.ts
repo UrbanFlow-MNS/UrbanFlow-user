@@ -4,7 +4,7 @@ export interface IUserService {
     findOneByEmail(email: string): Promise<UserDto | null>;
     findOneById(id: number): Promise<UserDto | null>;
     create(body: UserSignUpBody): Promise<UserDto>;
-    updatePassword(id: number, newPassword: string): void
+    updatePassword(id: number, newPassword: string, callerId: number, callerRole: string): Promise<{ message: string }>
     delete(id: number): Promise<{ statusCode: number; message: string }>;
     setRefreshToken(body: SetRefreshTokenDto): Promise<UserDto>;
     checkUserCredentials(email: string, password: string): Promise<boolean>;
