@@ -54,7 +54,7 @@ export class AgencyService {
             throw new NotFoundException('User not found');
         }
 
-        if (user.role !== UserRoleType.ADMIN_USER_CITY && user.role !== UserRoleType.USER_CITY) {
+        if (user.role !== UserRoleType.ADMIN_USER_CITY && user.role !== UserRoleType.USER_CITY && user.role !== UserRoleType.TECHNICIAN && user.role !== UserRoleType.ADMIN_TECHNICIAN) {
             throw new BadRequestException('User must have ADMIN_USER_CITY or USER_CITY role');
         }
 
