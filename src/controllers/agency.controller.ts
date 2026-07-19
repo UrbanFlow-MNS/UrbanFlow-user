@@ -11,6 +11,8 @@ import {
     CreateAgencyRequest,
     EmptyResponse,
     FindOneAgencyResponse,
+    UserListResponse,
+    UserRoleType as GrpcUserRoleType,
 } from '../../../proto/generated/typescript/user';
 
 type AgencyResponse = {
@@ -48,6 +50,22 @@ export class AgencyGrpcController {
         } catch {
             return { agency: undefined };
         }
+    }
+
+    @GrpcMethod('AgencyService', 'FindUsers')
+    async findUsers(data: AgencyByIdRequest): Promise<UserListResponse> {
+        const users = await this.agencyService.findUsers(data.id);
+        return {
+            users: users.map(u => ({
+                id: u.id ?? 0,
+                firstName: u.firstName ?? '',
+                lastName: u.lastName ?? '',
+                email: u.email ?? '',
+                role: u.role as unknown as GrpcUserRoleType,
+                refreshToken: undefined,
+                accessToken: undefined,
+            })),
+        };
     }
 
     @GrpcMethod('AgencyService', 'AddUser')

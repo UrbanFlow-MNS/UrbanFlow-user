@@ -43,6 +43,12 @@ export class AgencyService {
         return this.toResponse(agency);
     }
 
+    async findUsers(agencyId: number) {
+        const agency = await this.agencyRepository.findOne({ where: { id: agencyId }, relations: ['users'] });
+        if (!agency) throw new NotFoundException('Agency not found');
+        return agency.users ?? [];
+    }
+
     async addUser(agencyId: number, userId: number) {
         const agency = await this.agencyRepository.findOne({ where: { id: agencyId }, relations: ['users'] });
         if (!agency) {
