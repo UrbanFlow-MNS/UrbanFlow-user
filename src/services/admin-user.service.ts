@@ -1,22 +1,38 @@
 import { UserDto, UserRoleType } from '@bato-urbanflow/urbanflow-models';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import * as argon2 from 'argon2';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { UserConstants } from '../core/constants';
 import { UserEntity } from '../database/entities/user.entity';
-import { CreateCityUserDto } from '../dtos/create-city-user.dto';
-import { UpdateCityUserDto } from '../dtos/update-city-user.dto';
+import { CreateManagedUserDto } from '../dtos/create-managed-user.dto';
+import { UpdateManagedUserDto } from '../dtos/update-managed-user.dto';
 import { LogsService } from './log.service';
 
+const MANAGED_ROLES: Record<string, UserRoleType[]> = {
+    [UserRoleType.SUPERADMIN]: [UserRoleType.USER_CITY, UserRoleType.TECHNICIAN],
+    [UserRoleType.ADMIN_USER_CITY]: [UserRoleType.USER_CITY],
+    [UserRoleType.ADMIN_TECHNICIAN]: [UserRoleType.TECHNICIAN],
+};
+
+export function managedRolesFor(callerRole: UserRoleType): UserRoleType[] {
+    return MANAGED_ROLES[callerRole] ?? [];
+}
+
 @Injectable()
-export class AdminUserCityService {
+export class AdminUserService {
 
     constructor(
         private readonly logsService: LogsService,
         @Inject(UserConstants.USER_REPOSITORY) private readonly repository: Repository<UserEntity>
     ) { }
 
-    async create(dto: CreateCityUserDto, callerId: number): Promise<UserDto> {
+    async create(dto: CreateManagedUserDto, callerId: number, callerRole: UserRoleType): Promise<UserDto> {
+        const managedRoles = managedRolesFor(callerRole);
+
+        if (!managedRoles.includes(dto.role)) {
+            throw new BadRequestException('You are not allowed to create a user with this role');
+        }
+
         const existing = await this.repository.findOne({ where: { email: dto.email } });
 
         if (existing) {
@@ -28,7 +44,7 @@ export class AdminUserCityService {
         const entity = this.repository.create({
             ...dto,
             password: hashedPassword,
-            role: UserRoleType.USER_CITY,
+            role: dto.role,
             createdBy: callerId,
         });
 
@@ -41,44 +57,23 @@ export class AdminUserCityService {
     }
 
     async findAll(callerId: number, callerRole: UserRoleType): Promise<UserDto[]> {
-        const where = callerRole === UserRoleType.SUPERADMIN
-            ? { role: UserRoleType.USER_CITY }
-            : { role: UserRoleType.USER_CITY, createdBy: callerId };
+        const managedRoles = managedRolesFor(callerRole);
 
-        const users = await this.repository.find({ where });
+        if (managedRoles.length === 0) {
+            return [];
+        }
+
+        const users = await this.repository.find({ where: { role: In(managedRoles) } });
         return users.map(u => u.toDto());
     }
 
     async findOne(id: number, callerId: number, callerRole: UserRoleType): Promise<UserDto> {
-        const user = await this.repository.findOne({
-            where: { id, role: UserRoleType.USER_CITY },
-        });
-
-        if (!user) {
-            this.logsService.sendUserNotFound();
-            throw new NotFoundException('USER_CITY user not found');
-        }
-
-        if (callerRole !== UserRoleType.SUPERADMIN && user.createdBy !== callerId) {
-            throw new NotFoundException('USER_CITY user not found');
-        }
-
+        const user = await this.findManaged(id, callerRole);
         return user.toDto();
     }
 
-    async update(id: number, dto: UpdateCityUserDto, callerId: number, callerRole: UserRoleType): Promise<UserDto> {
-        const user = await this.repository.findOne({
-            where: { id, role: UserRoleType.USER_CITY },
-        });
-
-        if (!user) {
-            this.logsService.sendUserNotFound();
-            throw new NotFoundException('USER_CITY user not found');
-        }
-
-        if (callerRole !== UserRoleType.SUPERADMIN && user.createdBy !== callerId) {
-            throw new NotFoundException('USER_CITY user not found');
-        }
+    async update(id: number, dto: UpdateManagedUserDto, callerId: number, callerRole: UserRoleType): Promise<UserDto> {
+        const user = await this.findManaged(id, callerRole);
 
         if (dto.email && dto.email !== user.email) {
             const emailTaken = await this.repository.findOne({ where: { email: dto.email } });
@@ -100,22 +95,31 @@ export class AdminUserCityService {
     }
 
     async delete(id: number, callerId: number, callerRole: UserRoleType): Promise<{ statusCode: number; message: string }> {
-        const user = await this.repository.findOne({
-            where: { id, role: UserRoleType.USER_CITY },
-        });
-
-        if (!user) {
-            this.logsService.sendUserNotFound();
-            throw new NotFoundException('USER_CITY user not found');
-        }
-
-        if (callerRole !== UserRoleType.SUPERADMIN && user.createdBy !== callerId) {
-            throw new NotFoundException('USER_CITY user not found');
-        }
+        const user = await this.findManaged(id, callerRole);
 
         await this.repository.delete(id);
         this.logsService.sendDeleteUser(user.email);
 
-        return { statusCode: 200, message: 'USER_CITY user deleted successfully' };
+        return { statusCode: 200, message: 'User deleted successfully' };
+    }
+
+    private async findManaged(id: number, callerRole: UserRoleType): Promise<UserEntity> {
+        const managedRoles = managedRolesFor(callerRole);
+
+        if (managedRoles.length === 0) {
+            this.logsService.sendUserNotFound();
+            throw new NotFoundException('User not found');
+        }
+
+        const user = await this.repository.findOne({
+            where: { id, role: In(managedRoles) },
+        });
+
+        if (!user) {
+            this.logsService.sendUserNotFound();
+            throw new NotFoundException('User not found');
+        }
+
+        return user;
     }
 }

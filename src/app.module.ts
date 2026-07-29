@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { AdminUserCityGrpcController } from './controllers/admin-user-city.controller';
+import { AdminUserGrpcController } from './controllers/admin-user.controller';
 import { AgencyGrpcController } from './controllers/agency.controller';
 import { PrometheusController } from './controllers/prometheus.controller';
 import { UserGrpcController } from './controllers/user.controller';
@@ -9,7 +9,7 @@ import { UserConstants } from "./core/constants";
 import { DatabaseModule } from './database/database.module';
 import { agencyProviders } from './providers/agency.providers';
 import { userProviders } from './providers/user.providers';
-import { AdminUserCityService } from './services/admin-user-city.service';
+import { AdminUserService } from './services/admin-user.service';
 import { AgencyService } from './services/agency.service';
 import { LogsService } from './services/log.service';
 import { PrometheusService } from './services/prometheus.service';
@@ -33,14 +33,14 @@ import { UserService } from './services/user.service';
     ],
     controllers: [
         UserGrpcController,
-        AdminUserCityGrpcController,
+        AdminUserGrpcController,
         AgencyGrpcController,
         PrometheusController,
     ],
     providers: [
         ...userProviders,
         UserService,
-        AdminUserCityService,
+        AdminUserService,
         ...agencyProviders,
         AgencyService,
         LogsService,

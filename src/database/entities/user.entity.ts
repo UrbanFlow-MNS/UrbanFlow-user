@@ -48,7 +48,7 @@ export class UserEntity {
             email: this.email,
             role: this.role,
             refreshToken: this.refreshToken,
-            agencyId: this.role === UserRoleType.ADMIN_USER_CITY ? (this.agencyId ?? undefined) : undefined,
+            agencyId: this.agencyId ?? undefined,
         });
     }
 
