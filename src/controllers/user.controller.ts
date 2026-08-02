@@ -81,6 +81,7 @@ export class UserGrpcController {
             lastName: user.lastName ?? '',
             email: user.email ?? '',
             role: user.role as unknown as GrpcUserRoleType,
+            agencyId: user.agencyId ?? undefined,
             refreshToken: user.refreshToken ?? undefined,
             accessToken: user.accessToken ?? undefined,
         };
